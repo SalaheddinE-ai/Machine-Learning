@@ -1,10 +1,17 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from datetime import datetime
+import time
 
 # Configuration de la page
 st.set_page_config(
@@ -64,6 +71,117 @@ def load_data():
         st.error(f"Erreur lors du chargement des données : {e}")
         return None
 
+# Dictionnaire des modèles de Machine Learning
+ML_MODELS = {
+    'Random Forest': {
+        'model': RandomForestClassifier,
+        'params': {
+            'n_estimators': {'type': 'slider', 'min': 10, 'max': 500, 'default': 100, 'step': 10, 'label': 'Nombre d\'arbres'},
+            'max_depth': {'type': 'slider', 'min': 1, 'max': 30, 'default': 10, 'step': 1, 'label': 'Profondeur maximale'},
+            'min_samples_split': {'type': 'slider', 'min': 2, 'max': 20, 'default': 2, 'step': 1, 'label': 'Min échantillons pour split'}
+        },
+        'description': '🌳 Ensemble d\'arbres de décision. Robuste et performant pour la classification.',
+        'icon': '🌳'
+    },
+    'Gradient Boosting': {
+        'model': GradientBoostingClassifier,
+        'params': {
+            'n_estimators': {'type': 'slider', 'min': 10, 'max': 300, 'default': 100, 'step': 10, 'label': 'Nombre d\'estimateurs'},
+            'learning_rate': {'type': 'slider', 'min': 0.01, 'max': 1.0, 'default': 0.1, 'step': 0.01, 'label': 'Taux d\'apprentissage'},
+            'max_depth': {'type': 'slider', 'min': 1, 'max': 10, 'default': 3, 'step': 1, 'label': 'Profondeur maximale'}
+        },
+        'description': '🚀 Boosting séquentiel. Très performant mais plus lent à entraîner.',
+        'icon': '🚀'
+    },
+    'Support Vector Machine': {
+        'model': SVC,
+        'params': {
+            'C': {'type': 'slider', 'min': 0.01, 'max': 100.0, 'default': 1.0, 'step': 0.1, 'label': 'Paramètre C (régularisation)'},
+            'kernel': {'type': 'selectbox', 'options': ['rbf', 'linear', 'poly', 'sigmoid'], 'default': 'rbf', 'label': 'Kernel'},
+            'gamma': {'type': 'selectbox', 'options': ['scale', 'auto'], 'default': 'scale', 'label': 'Gamma'}
+        },
+        'description': '🎯 Machine à vecteurs de support. Excellent pour les données non-linéaires.',
+        'icon': '🎯'
+    },
+    'K-Nearest Neighbors': {
+        'model': KNeighborsClassifier,
+        'params': {
+            'n_neighbors': {'type': 'slider', 'min': 1, 'max': 20, 'default': 5, 'step': 1, 'label': 'Nombre de voisins'},
+            'weights': {'type': 'selectbox', 'options': ['uniform', 'distance'], 'default': 'uniform', 'label': 'Poids'},
+            'metric': {'type': 'selectbox', 'options': ['euclidean', 'manhattan', 'minkowski'], 'default': 'euclidean', 'label': 'Métrique'}
+        },
+        'description': '👥 Classification basée sur la proximité. Simple et intuitif.',
+        'icon': '👥'
+    },
+    'Decision Tree': {
+        'model': DecisionTreeClassifier,
+        'params': {
+            'max_depth': {'type': 'slider', 'min': 1, 'max': 30, 'default': 10, 'step': 1, 'label': 'Profondeur maximale'},
+            'min_samples_split': {'type': 'slider', 'min': 2, 'max': 20, 'default': 2, 'step': 1, 'label': 'Min échantillons pour split'},
+            'criterion': {'type': 'selectbox', 'options': ['gini', 'entropy'], 'default': 'gini', 'label': 'Critère de division'}
+        },
+        'description': '🌲 Arbre de décision unique. Facile à interpréter et visualiser.',
+        'icon': '🌲'
+    },
+    'Logistic Regression': {
+        'model': LogisticRegression,
+        'params': {
+            'C': {'type': 'slider', 'min': 0.01, 'max': 100.0, 'default': 1.0, 'step': 0.1, 'label': 'Paramètre C (régularisation)'},
+            'max_iter': {'type': 'slider', 'min': 100, 'max': 1000, 'default': 200, 'step': 100, 'label': 'Itérations maximales'},
+            'solver': {'type': 'selectbox', 'options': ['lbfgs', 'liblinear', 'saga'], 'default': 'lbfgs', 'label': 'Solveur'}
+        },
+        'description': '📊 Régression logistique. Simple, rapide et efficace pour la classification linéaire.',
+        'icon': '📊'
+    },
+    'Naive Bayes': {
+        'model': GaussianNB,
+        'params': {
+            'var_smoothing': {'type': 'slider', 'min': 1e-12, 'max': 1e-5, 'default': 1e-9, 'step': 1e-11, 'label': 'Lissage de variance', 'format': '%.2e'}
+        },
+        'description': '🎲 Classificateur bayésien. Très rapide, idéal pour les grands datasets.',
+        'icon': '🎲'
+    },
+    'Neural Network': {
+        'model': MLPClassifier,
+        'params': {
+            'hidden_layer_sizes': {'type': 'selectbox', 'options': [(50,), (100,), (100, 50), (100, 100)], 'default': (100,), 'label': 'Architecture (couches cachées)'},
+            'activation': {'type': 'selectbox', 'options': ['relu', 'tanh', 'logistic'], 'default': 'relu', 'label': 'Fonction d\'activation'},
+            'learning_rate_init': {'type': 'slider', 'min': 0.0001, 'max': 0.1, 'default': 0.001, 'step': 0.0001, 'label': 'Taux d\'apprentissage', 'format': '%.4f'}
+        },
+        'description': '🧠 Réseau de neurones. Puissant pour les relations complexes.',
+        'icon': '🧠'
+    },
+    'AdaBoost': {
+        'model': AdaBoostClassifier,
+        'params': {
+            'n_estimators': {'type': 'slider', 'min': 10, 'max': 300, 'default': 50, 'step': 10, 'label': 'Nombre d\'estimateurs'},
+            'learning_rate': {'type': 'slider', 'min': 0.01, 'max': 2.0, 'default': 1.0, 'step': 0.1, 'label': 'Taux d\'apprentissage'}
+        },
+        'description': '⚡ Adaptive Boosting. Combine des modèles faibles pour créer un modèle fort.',
+        'icon': '⚡'
+    }
+}
+
+# Fonction pour créer un modèle avec ses paramètres
+def create_model(model_name, params):
+    """Crée une instance du modèle avec les paramètres spécifiés"""
+    model_class = ML_MODELS[model_name]['model']
+    
+    # Paramètres spéciaux pour certains modèles
+    if model_name == 'Support Vector Machine':
+        params['probability'] = True  # Nécessaire pour predict_proba
+    elif model_name == 'Logistic Regression':
+        params['multi_class'] = 'multinomial'
+    elif model_name == 'Neural Network':
+        params['max_iter'] = 500
+        params['random_state'] = 42
+    
+    # Ajouter random_state si le modèle le supporte
+    if model_name not in ['Naive Bayes', 'K-Nearest Neighbors']:
+        params['random_state'] = 42
+    
+    return model_class(**params)
+
 # Fonction pour l'encodage des données
 def encode_data(df, encode_columns):
     """Encode les variables catégorielles"""
@@ -71,27 +189,29 @@ def encode_data(df, encode_columns):
 
 # Fonction pour entraîner le modèle
 @st.cache_resource
-def train_model(X, y, n_estimators=100, max_depth=None, random_state=42):
-    """Entraîne le modèle Random Forest"""
+def train_model(X, y, model_name, model_params):
+    """Entraîne le modèle sélectionné"""
     # Division train/test
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=random_state, stratify=y
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
     
-    # Entraînement du modèle
-    clf = RandomForestClassifier(
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        random_state=random_state,
-        n_jobs=-1
-    )
+    # Créer et entraîner le modèle
+    start_time = time.time()
+    clf = create_model(model_name, model_params)
     clf.fit(X_train, y_train)
+    training_time = time.time() - start_time
     
     # Évaluation
     y_pred = clf.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
     
-    return clf, accuracy, X_test, y_test, y_pred
+    # Cross-validation score
+    cv_scores = cross_val_score(clf, X_train, y_train, cv=5)
+    cv_mean = cv_scores.mean()
+    cv_std = cv_scores.std()
+    
+    return clf, accuracy, X_test, y_test, y_pred, training_time, cv_mean, cv_std
 
 # Chargement des données
 df = load_data()
@@ -111,13 +231,43 @@ if df is not None:
     
     # ========== SIDEBAR - PARAMÈTRES ==========
     with st.sidebar:
-        st.header("⚙️ Configuration du Modèle")
+        st.header("🤖 Sélection du Modèle")
         
-        # Hyperparamètres
-        with st.expander("🔧 Hyperparamètres", expanded=False):
-            n_estimators = st.slider('Nombre d\'arbres', 10, 500, 100, 10)
-            max_depth = st.slider('Profondeur maximale', 1, 20, 10)
-            random_state = st.number_input('Random State', 0, 100, 42)
+        # Sélection du modèle
+        model_name = st.selectbox(
+            '🎯 Choisir un modèle de ML',
+            options=list(ML_MODELS.keys()),
+            help="Sélectionnez l'algorithme de Machine Learning à utiliser"
+        )
+        
+        # Afficher la description du modèle
+        st.info(f"{ML_MODELS[model_name]['icon']} {ML_MODELS[model_name]['description']}")
+        
+        st.divider()
+        st.header("⚙️ Hyperparamètres")
+        
+        # Générer dynamiquement les contrôles pour les paramètres
+        model_params = {}
+        with st.expander("🔧 Ajuster les paramètres", expanded=True):
+            for param_name, param_config in ML_MODELS[model_name]['params'].items():
+                if param_config['type'] == 'slider':
+                    format_str = param_config.get('format', None)
+                    model_params[param_name] = st.slider(
+                        param_config['label'],
+                        min_value=param_config['min'],
+                        max_value=param_config['max'],
+                        value=param_config['default'],
+                        step=param_config['step'],
+                        format=format_str
+                    )
+                elif param_config['type'] == 'selectbox':
+                    options = param_config['options']
+                    default_idx = options.index(param_config['default']) if param_config['default'] in options else 0
+                    model_params[param_name] = st.selectbox(
+                        param_config['label'],
+                        options=options,
+                        index=default_idx
+                    )
         
         st.divider()
         st.header("📊 Caractéristiques du Manchot")
@@ -135,11 +285,12 @@ if df is not None:
         st.info("👆 Ajustez les paramètres ci-dessus puis consultez l'onglet **Prédiction**")
     
     # ========== ONGLETS PRINCIPAUX ==========
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "📈 Prédiction", 
         "📊 Données", 
         "📉 Visualisations", 
         "🎯 Performance du Modèle",
+        "⚖️ Comparaison des Modèles",
         "ℹ️ À propos"
     ])
     
@@ -173,9 +324,9 @@ if df is not None:
             st.metric("⚖️ Masse corporelle", f"{body_mass_g} g")
         
         # Entraîner le modèle
-        with st.spinner('🤖 Entraînement du modèle en cours...'):
-            clf, accuracy, X_test, y_test, y_pred = train_model(
-                X_encoded, y, n_estimators, max_depth, random_state
+        with st.spinner(f'🤖 Entraînement du modèle {model_name} en cours...'):
+            clf, accuracy, X_test, y_test, y_pred, training_time, cv_mean, cv_std = train_model(
+                X_encoded, y, model_name, model_params
             )
         
         # Préparer les données pour la prédiction
@@ -196,6 +347,9 @@ if df is not None:
         # Résultats de prédiction
         st.divider()
         st.subheader("🎯 Résultats de la Prédiction")
+        
+        # Informations sur le modèle utilisé
+        st.info(f"**Modèle utilisé**: {ML_MODELS[model_name]['icon']} {model_name}")
         
         species_names = ['Adelie', 'Chinstrap', 'Gentoo']
         predicted_species = species_names[prediction[0]]
@@ -424,34 +578,147 @@ if df is not None:
             use_container_width=True
         )
         
-        # Feature importance
+        # Feature importance (si disponible)
         st.subheader("🔍 Importance des Variables")
         
-        feature_importance = pd.DataFrame({
-            'Variable': X_encoded.columns,
-            'Importance': clf.feature_importances_
-        }).sort_values('Importance', ascending=False).head(15)
-        
-        st.dataframe(
-            feature_importance,
-            column_config={
-                'Variable': st.column_config.TextColumn('📊 Variable', width='large'),
-                'Importance': st.column_config.ProgressColumn(
-                    '📈 Importance',
-                    min_value=0,
-                    max_value=feature_importance['Importance'].max(),
-                    format="%.4f"
-                )
-            },
-            hide_index=True,
-            use_container_width=True
-        )
-        
-        # Graphique d'importance
-        st.bar_chart(feature_importance.set_index('Variable')['Importance'])
+        # Vérifier si le modèle supporte feature_importances_
+        if hasattr(clf, 'feature_importances_'):
+            feature_importance = pd.DataFrame({
+                'Variable': X_encoded.columns,
+                'Importance': clf.feature_importances_
+            }).sort_values('Importance', ascending=False).head(15)
+            
+            st.dataframe(
+                feature_importance,
+                column_config={
+                    'Variable': st.column_config.TextColumn('📊 Variable', width='large'),
+                    'Importance': st.column_config.ProgressColumn(
+                        '📈 Importance',
+                        min_value=0,
+                        max_value=feature_importance['Importance'].max(),
+                        format="%.4f"
+                    )
+                },
+                hide_index=True,
+                use_container_width=True
+            )
+            
+            # Graphique d'importance
+            st.bar_chart(feature_importance.set_index('Variable')['Importance'])
+        elif hasattr(clf, 'coef_'):
+            st.info("📊 Ce modèle utilise des coefficients au lieu d'importance de variables")
+            # Afficher les coefficients pour les modèles linéaires
+            coef_abs = np.abs(clf.coef_).mean(axis=0)
+            feature_coef = pd.DataFrame({
+                'Variable': X_encoded.columns,
+                'Coefficient (abs)': coef_abs
+            }).sort_values('Coefficient (abs)', ascending=False).head(15)
+            
+            st.dataframe(feature_coef, hide_index=True, use_container_width=True)
+            st.bar_chart(feature_coef.set_index('Variable')['Coefficient (abs)'])
+        else:
+            st.warning("⚠️ Ce modèle ne fournit pas d'information sur l'importance des variables")
     
-    # ========== TAB 5: À PROPOS ==========
+    # ========== TAB 5: COMPARAISON DES MODÈLES ==========
     with tab5:
+        st.header("📊 Comparaison des Modèles")
+        
+        st.info("🔄 Cette section compare les performances de tous les modèles disponibles")
+        
+        if st.button("🚀 Lancer la comparaison des modèles", type="primary"):
+            comparison_results = []
+            
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            for idx, (m_name, m_config) in enumerate(ML_MODELS.items()):
+                status_text.text(f"Entraînement de {m_name}...")
+                
+                # Utiliser les paramètres par défaut
+                default_params = {}
+                for param_name, param_config in m_config['params'].items():
+                    default_params[param_name] = param_config['default']
+                
+                try:
+                    # Entraîner le modèle
+                    start = time.time()
+                    model = create_model(m_name, default_params)
+                    
+                    X_train, X_test_temp, y_train, y_test_temp = train_test_split(
+                        X_encoded, y, test_size=0.2, random_state=42, stratify=y
+                    )
+                    
+                    model.fit(X_train, y_train)
+                    train_time = time.time() - start
+                    
+                    # Évaluer
+                    y_pred_temp = model.predict(X_test_temp)
+                    acc = accuracy_score(y_test_temp, y_pred_temp)
+                    
+                    # Cross-validation
+                    cv_scores_temp = cross_val_score(model, X_train, y_train, cv=5)
+                    
+                    comparison_results.append({
+                        'Modèle': m_name,
+                        'Icon': m_config['icon'],
+                        'Précision Test': f"{acc*100:.2f}%",
+                        'Précision CV': f"{cv_scores_temp.mean()*100:.2f}%",
+                        'CV Std': f"±{cv_scores_temp.std()*100:.2f}%",
+                        'Temps (s)': f"{train_time:.3f}",
+                        'Score': acc
+                    })
+                except Exception as e:
+                    st.warning(f"⚠️ Erreur avec {m_name}: {str(e)}")
+                
+                progress_bar.progress((idx + 1) / len(ML_MODELS))
+            
+            status_text.text("✅ Comparaison terminée!")
+            
+            # Afficher les résultats
+            if comparison_results:
+                st.subheader("🏆 Résultats de la Comparaison")
+                
+                comparison_df = pd.DataFrame(comparison_results)
+                comparison_df = comparison_df.sort_values('Score', ascending=False)
+                comparison_df = comparison_df.drop('Score', axis=1)
+                
+                # Ajouter des médailles
+                if len(comparison_df) >= 3:
+                    comparison_df['Rang'] = ['🥇', '🥈', '🥉'] + [''] * (len(comparison_df) - 3)
+                    comparison_df = comparison_df[['Rang', 'Icon', 'Modèle', 'Précision Test', 'Précision CV', 'CV Std', 'Temps (s)']]
+                
+                st.dataframe(comparison_df, hide_index=True, use_container_width=True)
+                
+                # Conseils
+                st.success(f"🏆 **Meilleur modèle**: {comparison_df.iloc[0]['Modèle']} avec une précision de {comparison_df.iloc[0]['Précision Test']}")
+                
+                st.divider()
+                st.subheader("💡 Conseils pour choisir un modèle")
+                st.markdown("""
+                - **Précision élevée** : Choisissez le modèle avec la meilleure précision test
+                - **Rapidité** : Si le temps est important, privilégiez les modèles rapides (Naive Bayes, Logistic Regression)
+                - **Interprétabilité** : Decision Tree et Logistic Regression sont plus faciles à interpréter
+                - **Robustesse** : Random Forest et Gradient Boosting sont généralement plus robustes
+                - **Données complexes** : Neural Network pour les relations non-linéaires complexes
+                """)
+        else:
+            st.write("👆 Cliquez sur le bouton ci-dessus pour comparer tous les modèles")
+            
+            # Tableau récapitulatif des modèles
+            st.subheader("📋 Modèles Disponibles")
+            models_info = []
+            for m_name, m_config in ML_MODELS.items():
+                models_info.append({
+                    'Icon': m_config['icon'],
+                    'Modèle': m_name,
+                    'Description': m_config['description']
+                })
+            
+            models_df = pd.DataFrame(models_info)
+            st.dataframe(models_df, hide_index=True, use_container_width=True)
+    
+    # ========== TAB 6: À PROPOS ==========
+    with tab6:
         st.header("ℹ️ À propos de l'Application")
         
         st.markdown("""
@@ -466,20 +733,29 @@ if df is not None:
         - **Variables**: Mesures morphologiques des manchots
         - **Îles**: Biscoe, Dream, et Torgersen
         
-        #### 🤖 Le Modèle
-        - **Algorithme**: Random Forest Classifier
-        - **Tâche**: Classification multi-classes (3 espèces)
-        - **Librairie**: scikit-learn
-        - **Entraînement**: 80% des données
-        - **Test**: 20% des données
+        #### 🤖 Les Modèles Disponibles
+        
+        Cette application propose **9 algorithmes de Machine Learning** différents:
+        
+        1. **🌳 Random Forest**: Ensemble d'arbres de décision
+        2. **🚀 Gradient Boosting**: Boosting séquentiel puissant
+        3. **🎯 SVM**: Machine à vecteurs de support
+        4. **👥 K-Nearest Neighbors**: Classification par proximité
+        5. **🌲 Decision Tree**: Arbre de décision simple
+        6. **📊 Logistic Regression**: Classification linéaire
+        7. **🎲 Naive Bayes**: Classificateur bayésien
+        8. **🧠 Neural Network**: Réseau de neurones multicouche
+        9. **⚡ AdaBoost**: Adaptive Boosting
         
         #### 🎯 Caractéristiques de l'Application
-        - ✅ Prédiction en temps réel
-        - ✅ Visualisations interactives natives
-        - ✅ Métriques de performance détaillées
-        - ✅ Hyperparamètres ajustables
-        - ✅ Interface intuitive et responsive
-        - ✅ Cache intelligent pour les performances
+        - ✅ **9 modèles de ML** au choix
+        - ✅ **Hyperparamètres personnalisables** pour chaque modèle
+        - ✅ **Prédiction en temps réel**
+        - ✅ **Comparaison automatique** des modèles
+        - ✅ **Validation croisée** (5-fold CV)
+        - ✅ **Métriques détaillées** (précision, matrice de confusion, rapport de classification)
+        - ✅ **Visualisations interactives** natives
+        - ✅ **Interface intuitive** et responsive
         
         #### 🛠️ Technologies Utilisées
         - **Streamlit**: Framework d'interface web
@@ -489,17 +765,29 @@ if df is not None:
         
         #### 📈 Comment utiliser l'application
         
-        1. **Sidebar**: Ajustez les caractéristiques du manchot
+        1. **Sidebar**: 
+           - Sélectionnez un modèle de ML
+           - Ajustez ses hyperparamètres
+           - Définissez les caractéristiques du manchot
         2. **Onglet Prédiction**: Visualisez la prédiction du modèle
         3. **Onglet Données**: Explorez le dataset
         4. **Onglet Visualisations**: Analysez les relations entre variables
         5. **Onglet Performance**: Évaluez la qualité du modèle
+        6. **Onglet Comparaison**: Comparez tous les modèles automatiquement
+        
+        #### 🏆 Conseils pour de Meilleures Prédictions
+        
+        - **Random Forest** et **Gradient Boosting** offrent généralement les meilleures performances
+        - **SVM** est excellent pour les données non-linéaires
+        - **Logistic Regression** est rapide et simple pour débuter
+        - **Neural Network** peut capturer des relations complexes mais nécessite plus de données
+        - Utilisez l'**onglet Comparaison** pour trouver le meilleur modèle
         
         #### 📚 Ressources
         - [Dataset Palmer Penguins](https://github.com/allisonhorst/palmerpenguins)
         - [Documentation Streamlit](https://docs.streamlit.io)
         - [Documentation Scikit-learn](https://scikit-learn.org)
-        - [Random Forest Classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
+        - [Guide des algorithmes de classification](https://scikit-learn.org/stable/supervised_learning.html)
         
         #### 🔬 Variables du Dataset
         
@@ -515,8 +803,8 @@ if df is not None:
         
         ---
         
-        💡 **Conseil**: Essayez différentes combinaisons de paramètres pour voir comment 
-        le modèle réagit et améliore ses prédictions!
+        💡 **Astuce**: Utilisez l'onglet "Comparaison des Modèles" pour identifier automatiquement 
+        le meilleur algorithme pour ce dataset!
         
         ---
         
@@ -533,16 +821,18 @@ if df is not None:
 - Pandas: {pd.__version__}
 - NumPy: {np.__version__}
 
-🎯 Configuration du Modèle:
-- Arbres: {n_estimators}
-- Profondeur max: {max_depth}
-- Random state: {random_state}
-- Précision: {accuracy*100:.2f}%
+🤖 Modèle Actuel: {model_name}
+🎯 Précision: {accuracy*100:.2f}%
+✅ Précision CV: {cv_mean*100:.2f}% (±{cv_std*100:.2f}%)
+⏱️ Temps d'entraînement: {training_time:.3f}s
 
 📊 Dataset:
 - Observations: {len(df)}
 - Variables: {len(df.columns)}
 - Espèces: {df['species'].nunique()}
+
+🔧 Paramètres:
+{chr(10).join([f'- {k}: {v}' for k, v in model_params.items()])}
             """)
         
         # Exemples de prédiction
