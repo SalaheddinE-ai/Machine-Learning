@@ -4,8 +4,6 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
 
 # Configuration de la page
@@ -37,6 +35,17 @@ st.markdown("""
         padding: 1rem;
         border-radius: 0.5rem;
     }
+    .prediction-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        text-align: center;
+        margin: 1rem 0;
+    }
+    .species-adelie { color: #FF6B6B; font-weight: bold; }
+    .species-chinstrap { color: #4ECDC4; font-weight: bold; }
+    .species-gentoo { color: #45B7D1; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -121,8 +130,9 @@ if df is not None:
         body_mass_g = st.slider('⚖️ Masse corporelle (g)', 2700.0, 6300.0, 4207.0)
         gender = st.selectbox('⚥ Sexe', ('male', 'female'))
         
-        # Bouton de prédiction
-        predict_button = st.button('🔮 Prédire l\'espèce', type="primary", use_container_width=True)
+        # Info
+        st.divider()
+        st.info("👆 Ajustez les paramètres ci-dessus puis consultez l'onglet **Prédiction**")
     
     # ========== ONGLETS PRINCIPAUX ==========
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -163,9 +173,10 @@ if df is not None:
             st.metric("⚖️ Masse corporelle", f"{body_mass_g} g")
         
         # Entraîner le modèle
-        clf, accuracy, X_test, y_test, y_pred = train_model(
-            X_encoded, y, n_estimators, max_depth, random_state
-        )
+        with st.spinner('🤖 Entraînement du modèle en cours...'):
+            clf, accuracy, X_test, y_test, y_pred = train_model(
+                X_encoded, y, n_estimators, max_depth, random_state
+            )
         
         # Préparer les données pour la prédiction
         input_penguins = pd.concat([input_df, X_raw], axis=0)
@@ -191,58 +202,53 @@ if df is not None:
         confidence = prediction_proba[0][prediction[0]] * 100
         
         # Affichage de la prédiction principale
-        col1, col2 = st.columns([2, 1])
+        col1, col2 = st.columns([3, 1])
         
         with col1:
-            st.success(f"### 🐧 Espèce prédite : **{predicted_species}**")
-            st.info(f"**Confiance de la prédiction : {confidence:.2f}%**")
+            species_class = f"species-{predicted_species.lower()}"
+            st.markdown(f"""
+            <div class="prediction-box">
+                <h2>🐧 Espèce prédite</h2>
+                <h1 style="font-size: 3rem; margin: 1rem 0;">{predicted_species}</h1>
+                <h3>Confiance : {confidence:.2f}%</h3>
+            </div>
+            """, unsafe_allow_html=True)
         
         with col2:
-            st.markdown(f"<div style='font-size: 100px; text-align: center;'>🐧</div>", 
+            st.markdown(f"<div style='font-size: 120px; text-align: center; margin-top: 2rem;'>🐧</div>", 
                        unsafe_allow_html=True)
         
-        # Graphique des probabilités avec matplotlib
+        # Tableau des probabilités
         st.subheader("📊 Probabilités par Espèce")
         
-        fig, ax = plt.subplots(figsize=(10, 5))
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
-        bars = ax.bar(species_names, prediction_proba[0] * 100, color=colors)
-        ax.set_ylabel('Probabilité (%)', fontsize=12)
-        ax.set_xlabel('Espèce', fontsize=12)
-        ax.set_ylim(0, 100)
-        ax.grid(axis='y', alpha=0.3)
+        df_proba = pd.DataFrame({
+            'Espèce': species_names,
+            'Probabilité (%)': [f"{p*100:.2f}%" for p in prediction_proba[0]],
+            'Confiance': prediction_proba[0]
+        })
         
-        # Ajouter les valeurs sur les barres
-        for bar in bars:
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height,
-                   f'{height:.1f}%',
-                   ha='center', va='bottom', fontsize=10, fontweight='bold')
+        st.dataframe(
+            df_proba,
+            column_config={
+                'Espèce': st.column_config.TextColumn('🐧 Espèce', width='medium'),
+                'Probabilité (%)': st.column_config.TextColumn('📊 Probabilité', width='medium'),
+                'Confiance': st.column_config.ProgressColumn(
+                    '📈 Niveau de confiance',
+                    min_value=0,
+                    max_value=1,
+                    format="%.2f"
+                )
+            },
+            hide_index=True,
+            use_container_width=True
+        )
         
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close()
-        
-        # Tableau détaillé des probabilités
-        with st.expander("📋 Tableau détaillé des probabilités"):
-            df_proba_display = pd.DataFrame({
-                'Espèce': species_names,
-                'Probabilité (%)': [f"{p*100:.2f}%" for p in prediction_proba[0]],
-                'Confiance': prediction_proba[0]
-            })
-            st.dataframe(
-                df_proba_display,
-                column_config={
-                    'Confiance': st.column_config.ProgressColumn(
-                        'Confiance',
-                        min_value=0,
-                        max_value=1,
-                        format="%.2f"
-                    )
-                },
-                hide_index=True,
-                use_container_width=True
-            )
+        # Graphique avec bar_chart natif de Streamlit
+        st.subheader("📈 Graphique de Probabilités")
+        chart_data = pd.DataFrame({
+            'Probabilité': prediction_proba[0] * 100
+        }, index=species_names)
+        st.bar_chart(chart_data)
     
     # ========== TAB 2: DONNÉES ==========
     with tab2:
@@ -250,13 +256,13 @@ if df is not None:
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("📝 Nombre d'observations", len(df))
+            st.metric("📝 Observations", len(df))
         with col2:
-            st.metric("🔢 Nombre de variables", len(df.columns))
+            st.metric("🔢 Variables", len(df.columns))
         with col3:
-            st.metric("🐧 Nombre d'espèces", df['species'].nunique())
+            st.metric("🐧 Espèces", df['species'].nunique())
         with col4:
-            st.metric("✅ Données complètes", "Oui")
+            st.metric("✅ Complétude", "100%")
         
         st.divider()
         
@@ -272,28 +278,37 @@ if df is not None:
         st.subheader("📊 Distribution des Espèces")
         species_counts = df['species'].value_counts()
         
-        fig, ax = plt.subplots(figsize=(8, 6))
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
-        wedges, texts, autotexts = ax.pie(
-            species_counts.values, 
-            labels=species_counts.index,
-            autopct='%1.1f%%',
-            colors=colors,
-            startangle=90
-        )
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontweight('bold')
-        ax.set_title('Répartition des Espèces dans le Dataset', fontsize=14, fontweight='bold')
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close()
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.bar_chart(species_counts)
+        with col2:
+            st.dataframe(
+                pd.DataFrame({
+                    'Espèce': species_counts.index,
+                    'Nombre': species_counts.values,
+                    'Pourcentage': [f"{(v/len(df)*100):.1f}%" for v in species_counts.values]
+                }),
+                hide_index=True
+            )
+        
+        # Informations par espèce
+        st.subheader("📋 Résumé par Espèce")
+        for species in df['species'].unique():
+            with st.expander(f"🐧 {species}"):
+                species_df = df[df['species'] == species]
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Nombre", len(species_df))
+                with col2:
+                    st.metric("Masse moyenne", f"{species_df['body_mass_g'].mean():.0f} g")
+                with col3:
+                    st.metric("Bec moyen", f"{species_df['bill_length_mm'].mean():.1f} mm")
     
     # ========== TAB 3: VISUALISATIONS ==========
     with tab3:
         st.header("📉 Visualisations des Données")
         
-        # Scatter plot interactif
+        # Scatter plot avec Streamlit
         st.subheader("🔍 Relation entre les Variables")
         
         col1, col2 = st.columns(2)
@@ -301,74 +316,55 @@ if df is not None:
             x_axis = st.selectbox(
                 'Axe X',
                 ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g'],
-                index=0
+                index=0,
+                key='x_axis'
             )
         with col2:
             y_axis = st.selectbox(
                 'Axe Y',
                 ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g'],
-                index=3
+                index=3,
+                key='y_axis'
             )
         
-        # Scatter plot avec matplotlib
-        fig, ax = plt.subplots(figsize=(10, 6))
-        species_colors = {'Adelie': '#FF6B6B', 'Chinstrap': '#4ECDC4', 'Gentoo': '#45B7D1'}
-        
-        for species in df['species'].unique():
-            species_data = df[df['species'] == species]
-            ax.scatter(
-                species_data[x_axis], 
-                species_data[y_axis],
-                c=species_colors[species],
-                label=species,
-                alpha=0.6,
-                s=100
-            )
-        
-        ax.set_xlabel(x_axis.replace('_', ' ').title(), fontsize=12)
-        ax.set_ylabel(y_axis.replace('_', ' ').title(), fontsize=12)
-        ax.legend()
-        ax.grid(alpha=0.3)
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close()
-        
-        # Box plots
-        st.subheader("📦 Distribution des Variables par Espèce")
-        
-        variable = st.selectbox(
-            'Sélectionner une variable',
-            ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']
+        # Scatter chart natif Streamlit
+        st.scatter_chart(
+            data=df,
+            x=x_axis,
+            y=y_axis,
+            color='species',
+            size='body_mass_g'
         )
         
-        fig, ax = plt.subplots(figsize=(10, 6))
-        species_list = df['species'].unique()
-        data_to_plot = [df[df['species'] == species][variable].values for species in species_list]
+        # Distribution par variable
+        st.subheader("📊 Distribution des Variables")
         
-        bp = ax.boxplot(data_to_plot, labels=species_list, patch_artist=True)
-        for patch, color in zip(bp['boxes'], ['#FF6B6B', '#4ECDC4', '#45B7D1']):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
+        variable = st.selectbox(
+            'Sélectionner une variable à analyser',
+            ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g'],
+            key='dist_var'
+        )
         
-        ax.set_ylabel(variable.replace('_', ' ').title(), fontsize=12)
-        ax.set_xlabel('Espèce', fontsize=12)
-        ax.grid(axis='y', alpha=0.3)
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close()
+        st.write(f"**Distribution de {variable.replace('_', ' ').title()}**")
         
-        # Correlation matrix
-        st.subheader("🔗 Matrice de Corrélation")
-        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        # Histogramme pour chaque espèce
+        for species in df['species'].unique():
+            species_data = df[df['species'] == species][variable]
+            st.write(f"**{species}**: Moyenne = {species_data.mean():.2f}, Écart-type = {species_data.std():.2f}")
+        
+        # Comparaison avec line chart
+        comparison_df = df.groupby('species')[variable].mean().reset_index()
+        comparison_df.columns = ['Espèce', 'Valeur Moyenne']
+        st.bar_chart(comparison_df.set_index('Espèce'))
+        
+        # Matrice de corrélation simplifiée
+        st.subheader("🔗 Corrélations entre Variables")
+        numeric_cols = ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']
         corr_matrix = df[numeric_cols].corr()
-        
-        fig, ax = plt.subplots(figsize=(10, 8))
-        sns.heatmap(corr_matrix, annot=True, fmt='.2f', cmap='RdBu_r', 
-                   center=0, square=True, linewidths=1, ax=ax)
-        ax.set_title('Corrélations entre les Variables Numériques', fontsize=14, fontweight='bold')
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close()
+        st.dataframe(
+            corr_matrix.style.background_gradient(cmap='RdBu_r', vmin=-1, vmax=1),
+            use_container_width=True
+        )
     
     # ========== TAB 4: PERFORMANCE ==========
     with tab4:
@@ -377,13 +373,16 @@ if df is not None:
         # Métriques de performance
         st.subheader("📊 Métriques Globales")
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("🎯 Précision du Modèle", f"{accuracy*100:.2f}%")
+            st.metric("🎯 Précision", f"{accuracy*100:.2f}%", 
+                     delta=f"{(accuracy-0.8)*100:.1f}%" if accuracy > 0.8 else None)
         with col2:
-            st.metric("🌳 Nombre d'Arbres", n_estimators)
+            st.metric("🌳 Arbres", n_estimators)
         with col3:
-            st.metric("📏 Profondeur Max", max_depth)
+            st.metric("📏 Profondeur", max_depth)
+        with col4:
+            st.metric("🔢 Random State", random_state)
         
         st.divider()
         
@@ -391,16 +390,16 @@ if df is not None:
         st.subheader("🔢 Matrice de Confusion")
         cm = confusion_matrix(y_test, y_pred)
         
-        fig, ax = plt.subplots(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                   xticklabels=species_names, yticklabels=species_names,
-                   ax=ax, cbar_kws={'label': 'Nombre'})
-        ax.set_ylabel('Valeur Réelle', fontsize=12)
-        ax.set_xlabel('Prédiction', fontsize=12)
-        ax.set_title('Matrice de Confusion', fontsize=14, fontweight='bold')
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close()
+        cm_df = pd.DataFrame(
+            cm,
+            index=[f'Réel: {s}' for s in species_names],
+            columns=[f'Prédit: {s}' for s in species_names]
+        )
+        
+        st.dataframe(
+            cm_df.style.background_gradient(cmap='Blues'),
+            use_container_width=True
+        )
         
         # Rapport de classification
         st.subheader("📋 Rapport de Classification Détaillé")
@@ -413,7 +412,10 @@ if df is not None:
         
         report_df = pd.DataFrame(report).transpose()
         report_df = report_df.round(3)
-        st.dataframe(report_df, use_container_width=True)
+        st.dataframe(
+            report_df.style.background_gradient(cmap='Greens', subset=['precision', 'recall', 'f1-score']),
+            use_container_width=True
+        )
         
         # Feature importance
         st.subheader("🔍 Importance des Variables")
@@ -421,18 +423,25 @@ if df is not None:
         feature_importance = pd.DataFrame({
             'Variable': X_encoded.columns,
             'Importance': clf.feature_importances_
-        }).sort_values('Importance', ascending=False).head(10)
+        }).sort_values('Importance', ascending=False).head(15)
         
-        fig, ax = plt.subplots(figsize=(10, 6))
-        colors = plt.cm.viridis(np.linspace(0, 1, len(feature_importance)))
-        ax.barh(feature_importance['Variable'], feature_importance['Importance'], color=colors)
-        ax.set_xlabel('Importance', fontsize=12)
-        ax.set_ylabel('Variable', fontsize=12)
-        ax.set_title('Top 10 des Variables les Plus Importantes', fontsize=14, fontweight='bold')
-        ax.invert_yaxis()
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close()
+        st.dataframe(
+            feature_importance,
+            column_config={
+                'Variable': st.column_config.TextColumn('📊 Variable', width='large'),
+                'Importance': st.column_config.ProgressColumn(
+                    '📈 Importance',
+                    min_value=0,
+                    max_value=feature_importance['Importance'].max(),
+                    format="%.4f"
+                )
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # Graphique d'importance
+        st.bar_chart(feature_importance.set_index('Variable')['Importance'])
     
     # ========== TAB 5: À PROPOS ==========
     with tab5:
@@ -448,29 +457,59 @@ if df is not None:
         - **Source**: Palmer Station, Antarctique
         - **Espèces**: Adelie, Chinstrap, et Gentoo
         - **Variables**: Mesures morphologiques des manchots
+        - **Îles**: Biscoe, Dream, et Torgersen
         
         #### 🤖 Le Modèle
         - **Algorithme**: Random Forest Classifier
-        - **Tâche**: Classification multi-classes
+        - **Tâche**: Classification multi-classes (3 espèces)
         - **Librairie**: scikit-learn
+        - **Entraînement**: 80% des données
+        - **Test**: 20% des données
         
         #### 🎯 Caractéristiques de l'Application
         - ✅ Prédiction en temps réel
-        - ✅ Visualisations interactives
+        - ✅ Visualisations interactives natives
         - ✅ Métriques de performance détaillées
         - ✅ Hyperparamètres ajustables
-        - ✅ Interface intuitive
+        - ✅ Interface intuitive et responsive
+        - ✅ Cache intelligent pour les performances
         
         #### 🛠️ Technologies Utilisées
-        - **Streamlit**: Interface web
-        - **Scikit-learn**: Machine Learning
-        - **Matplotlib & Seaborn**: Visualisations
-        - **Pandas & NumPy**: Manipulation de données
+        - **Streamlit**: Framework d'interface web
+        - **Scikit-learn**: Bibliothèque de Machine Learning
+        - **Pandas**: Manipulation et analyse de données
+        - **NumPy**: Calculs numériques
         
-        #### 📚 En savoir plus
+        #### 📈 Comment utiliser l'application
+        
+        1. **Sidebar**: Ajustez les caractéristiques du manchot
+        2. **Onglet Prédiction**: Visualisez la prédiction du modèle
+        3. **Onglet Données**: Explorez le dataset
+        4. **Onglet Visualisations**: Analysez les relations entre variables
+        5. **Onglet Performance**: Évaluez la qualité du modèle
+        
+        #### 📚 Ressources
         - [Dataset Palmer Penguins](https://github.com/allisonhorst/palmerpenguins)
         - [Documentation Streamlit](https://docs.streamlit.io)
         - [Documentation Scikit-learn](https://scikit-learn.org)
+        - [Random Forest Classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)
+        
+        #### 🔬 Variables du Dataset
+        
+        | Variable | Description | Unité |
+        |----------|-------------|-------|
+        | island | Île où le manchot a été observé | Catégorielle |
+        | bill_length_mm | Longueur du bec | mm |
+        | bill_depth_mm | Profondeur du bec | mm |
+        | flipper_length_mm | Longueur de la nageoire | mm |
+        | body_mass_g | Masse corporelle | g |
+        | sex | Sexe du manchot | Catégorielle |
+        | species | Espèce (cible) | Catégorielle |
+        
+        ---
+        
+        💡 **Conseil**: Essayez différentes combinaisons de paramètres pour voir comment 
+        le modèle réagit et améliore ses prédictions!
         
         ---
         
@@ -480,21 +519,59 @@ if df is not None:
         # Informations système
         with st.expander("⚙️ Informations Système"):
             st.code(f"""
-Date: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-Python Libraries:
+📅 Date: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+📚 Python Libraries:
 - Streamlit: {st.__version__}
 - Pandas: {pd.__version__}
 - NumPy: {np.__version__}
+
+🎯 Configuration du Modèle:
+- Arbres: {n_estimators}
+- Profondeur max: {max_depth}
+- Random state: {random_state}
+- Précision: {accuracy*100:.2f}%
+
+📊 Dataset:
+- Observations: {len(df)}
+- Variables: {len(df.columns)}
+- Espèces: {df['species'].nunique()}
+            """)
+        
+        # Exemples de prédiction
+        with st.expander("🎮 Exemples de Configuration"):
+            st.markdown("""
+            **Exemple 1 - Manchot Adelie typique:**
+            - Île: Torgersen
+            - Longueur du bec: 39 mm
+            - Profondeur du bec: 18 mm
+            - Longueur nageoire: 190 mm
+            - Masse: 3700 g
+            
+            **Exemple 2 - Manchot Gentoo typique:**
+            - Île: Biscoe
+            - Longueur du bec: 47 mm
+            - Profondeur du bec: 15 mm
+            - Longueur nageoire: 217 mm
+            - Masse: 5000 g
+            
+            **Exemple 3 - Manchot Chinstrap typique:**
+            - Île: Dream
+            - Longueur du bec: 49 mm
+            - Profondeur du bec: 18 mm
+            - Longueur nageoire: 195 mm
+            - Masse: 3800 g
             """)
 
 else:
     st.error("❌ Impossible de charger les données. Veuillez vérifier votre connexion internet.")
+    st.info("💡 Assurez-vous d'avoir une connexion internet active pour charger le dataset.")
 
 # Footer
 st.divider()
 st.markdown("""
 <div style='text-align: center; color: #666; padding: 1rem;'>
-    <p>🐧 Application de Machine Learning - Prédiction d'Espèces de Manchots</p>
-    <p>Créé avec Streamlit | © 2024</p>
+    <p>🐧 <strong>Application de Machine Learning</strong> - Prédiction d'Espèces de Manchots</p>
+    <p>Créé avec Streamlit 🎈 | © 2024</p>
 </div>
 """, unsafe_allow_html=True)
