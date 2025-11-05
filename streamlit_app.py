@@ -4,8 +4,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import plotly.express as px
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import seaborn as sns
 from datetime import datetime
 
 # Configuration de la page
@@ -32,11 +32,10 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
-    .metric-card {
+    .stMetric {
         background-color: #f0f2f6;
         padding: 1rem;
         border-radius: 0.5rem;
-        margin: 0.5rem 0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -199,54 +198,42 @@ if df is not None:
             st.info(f"**Confiance de la prédiction : {confidence:.2f}%**")
         
         with col2:
-            # Emoji selon l'espèce
-            species_emoji = {
-                'Adelie': '🐧',
-                'Chinstrap': '🐧',
-                'Gentoo': '🐧'
-            }
-            st.markdown(f"<div style='font-size: 100px; text-align: center;'>{species_emoji[predicted_species]}</div>", 
+            st.markdown(f"<div style='font-size: 100px; text-align: center;'>🐧</div>", 
                        unsafe_allow_html=True)
         
-        # Graphique des probabilités
+        # Graphique des probabilités avec matplotlib
         st.subheader("📊 Probabilités par Espèce")
         
-        df_proba = pd.DataFrame({
-            'Espèce': species_names,
-            'Probabilité': prediction_proba[0] * 100
-        })
+        fig, ax = plt.subplots(figsize=(10, 5))
+        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
+        bars = ax.bar(species_names, prediction_proba[0] * 100, color=colors)
+        ax.set_ylabel('Probabilité (%)', fontsize=12)
+        ax.set_xlabel('Espèce', fontsize=12)
+        ax.set_ylim(0, 100)
+        ax.grid(axis='y', alpha=0.3)
         
-        fig = px.bar(
-            df_proba, 
-            x='Espèce', 
-            y='Probabilité',
-            color='Espèce',
-            color_discrete_map={
-                'Adelie': '#FF6B6B',
-                'Chinstrap': '#4ECDC4',
-                'Gentoo': '#45B7D1'
-            },
-            text='Probabilité'
-        )
-        fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
-        fig.update_layout(
-            showlegend=False,
-            yaxis_title="Probabilité (%)",
-            height=400
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        # Ajouter les valeurs sur les barres
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height,
+                   f'{height:.1f}%',
+                   ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
         
         # Tableau détaillé des probabilités
         with st.expander("📋 Tableau détaillé des probabilités"):
             df_proba_display = pd.DataFrame({
                 'Espèce': species_names,
                 'Probabilité (%)': [f"{p*100:.2f}%" for p in prediction_proba[0]],
-                'Barre de progression': prediction_proba[0]
+                'Confiance': prediction_proba[0]
             })
             st.dataframe(
                 df_proba_display,
                 column_config={
-                    'Barre de progression': st.column_config.ProgressColumn(
+                    'Confiance': st.column_config.ProgressColumn(
                         'Confiance',
                         min_value=0,
                         max_value=1,
@@ -285,13 +272,22 @@ if df is not None:
         st.subheader("📊 Distribution des Espèces")
         species_counts = df['species'].value_counts()
         
-        fig = px.pie(
-            values=species_counts.values,
-            names=species_counts.index,
-            title="Répartition des Espèces dans le Dataset",
-            color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#45B7D1']
+        fig, ax = plt.subplots(figsize=(8, 6))
+        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
+        wedges, texts, autotexts = ax.pie(
+            species_counts.values, 
+            labels=species_counts.index,
+            autopct='%1.1f%%',
+            colors=colors,
+            startangle=90
         )
-        st.plotly_chart(fig, use_container_width=True)
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontweight('bold')
+        ax.set_title('Répartition des Espèces dans le Dataset', fontsize=14, fontweight='bold')
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
     
     # ========== TAB 3: VISUALISATIONS ==========
     with tab3:
@@ -314,22 +310,28 @@ if df is not None:
                 index=3
             )
         
-        fig = px.scatter(
-            df,
-            x=x_axis,
-            y=y_axis,
-            color='species',
-            symbol='sex',
-            size='body_mass_g',
-            hover_data=['island'],
-            title=f'{y_axis} vs {x_axis}',
-            color_discrete_map={
-                'Adelie': '#FF6B6B',
-                'Chinstrap': '#4ECDC4',
-                'Gentoo': '#45B7D1'
-            }
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        # Scatter plot avec matplotlib
+        fig, ax = plt.subplots(figsize=(10, 6))
+        species_colors = {'Adelie': '#FF6B6B', 'Chinstrap': '#4ECDC4', 'Gentoo': '#45B7D1'}
+        
+        for species in df['species'].unique():
+            species_data = df[df['species'] == species]
+            ax.scatter(
+                species_data[x_axis], 
+                species_data[y_axis],
+                c=species_colors[species],
+                label=species,
+                alpha=0.6,
+                s=100
+            )
+        
+        ax.set_xlabel(x_axis.replace('_', ' ').title(), fontsize=12)
+        ax.set_ylabel(y_axis.replace('_', ' ').title(), fontsize=12)
+        ax.legend()
+        ax.grid(alpha=0.3)
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
         
         # Box plots
         st.subheader("📦 Distribution des Variables par Espèce")
@@ -339,33 +341,34 @@ if df is not None:
             ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']
         )
         
-        fig = px.box(
-            df,
-            x='species',
-            y=variable,
-            color='species',
-            title=f'Distribution de {variable} par Espèce',
-            color_discrete_map={
-                'Adelie': '#FF6B6B',
-                'Chinstrap': '#4ECDC4',
-                'Gentoo': '#45B7D1'
-            }
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        species_list = df['species'].unique()
+        data_to_plot = [df[df['species'] == species][variable].values for species in species_list]
+        
+        bp = ax.boxplot(data_to_plot, labels=species_list, patch_artist=True)
+        for patch, color in zip(bp['boxes'], ['#FF6B6B', '#4ECDC4', '#45B7D1']):
+            patch.set_facecolor(color)
+            patch.set_alpha(0.7)
+        
+        ax.set_ylabel(variable.replace('_', ' ').title(), fontsize=12)
+        ax.set_xlabel('Espèce', fontsize=12)
+        ax.grid(axis='y', alpha=0.3)
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
         
         # Correlation matrix
         st.subheader("🔗 Matrice de Corrélation")
         numeric_cols = df.select_dtypes(include=[np.number]).columns
         corr_matrix = df[numeric_cols].corr()
         
-        fig = px.imshow(
-            corr_matrix,
-            text_auto='.2f',
-            aspect="auto",
-            title="Corrélations entre les Variables Numériques",
-            color_continuous_scale='RdBu_r'
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        sns.heatmap(corr_matrix, annot=True, fmt='.2f', cmap='RdBu_r', 
+                   center=0, square=True, linewidths=1, ax=ax)
+        ax.set_title('Corrélations entre les Variables Numériques', fontsize=14, fontweight='bold')
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
     
     # ========== TAB 4: PERFORMANCE ==========
     with tab4:
@@ -388,16 +391,16 @@ if df is not None:
         st.subheader("🔢 Matrice de Confusion")
         cm = confusion_matrix(y_test, y_pred)
         
-        fig = px.imshow(
-            cm,
-            labels=dict(x="Prédiction", y="Valeur Réelle", color="Nombre"),
-            x=species_names,
-            y=species_names,
-            text_auto=True,
-            title="Matrice de Confusion",
-            color_continuous_scale='Blues'
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        fig, ax = plt.subplots(figsize=(8, 6))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                   xticklabels=species_names, yticklabels=species_names,
+                   ax=ax, cbar_kws={'label': 'Nombre'})
+        ax.set_ylabel('Valeur Réelle', fontsize=12)
+        ax.set_xlabel('Prédiction', fontsize=12)
+        ax.set_title('Matrice de Confusion', fontsize=14, fontweight='bold')
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
         
         # Rapport de classification
         st.subheader("📋 Rapport de Classification Détaillé")
@@ -420,16 +423,16 @@ if df is not None:
             'Importance': clf.feature_importances_
         }).sort_values('Importance', ascending=False).head(10)
         
-        fig = px.bar(
-            feature_importance,
-            x='Importance',
-            y='Variable',
-            orientation='h',
-            title='Top 10 des Variables les Plus Importantes',
-            color='Importance',
-            color_continuous_scale='Viridis'
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        colors = plt.cm.viridis(np.linspace(0, 1, len(feature_importance)))
+        ax.barh(feature_importance['Variable'], feature_importance['Importance'], color=colors)
+        ax.set_xlabel('Importance', fontsize=12)
+        ax.set_ylabel('Variable', fontsize=12)
+        ax.set_title('Top 10 des Variables les Plus Importantes', fontsize=14, fontweight='bold')
+        ax.invert_yaxis()
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close()
     
     # ========== TAB 5: À PROPOS ==========
     with tab5:
@@ -461,7 +464,7 @@ if df is not None:
         #### 🛠️ Technologies Utilisées
         - **Streamlit**: Interface web
         - **Scikit-learn**: Machine Learning
-        - **Plotly**: Visualisations interactives
+        - **Matplotlib & Seaborn**: Visualisations
         - **Pandas & NumPy**: Manipulation de données
         
         #### 📚 En savoir plus
@@ -477,11 +480,11 @@ if df is not None:
         # Informations système
         with st.expander("⚙️ Informations Système"):
             st.code(f"""
-            Date: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-            Python Libraries:
-            - Streamlit: {st.__version__}
-            - Pandas: {pd.__version__}
-            - NumPy: {np.__version__}
+Date: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Python Libraries:
+- Streamlit: {st.__version__}
+- Pandas: {pd.__version__}
+- NumPy: {np.__version__}
             """)
 
 else:
