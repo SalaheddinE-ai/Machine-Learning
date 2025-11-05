@@ -539,11 +539,11 @@ if df is not None:
             st.metric("🎯 Précision", f"{accuracy*100:.2f}%", 
                      delta=f"{(accuracy-0.8)*100:.1f}%" if accuracy > 0.8 else None)
         with col2:
-            st.metric("🌳 Arbres", n_estimators)
+            st.metric("🌳 Arbres", model_params.get('n_estimators', 'N/A'))
         with col3:
-            st.metric("📏 Profondeur", max_depth)
+            st.metric("📏 Profondeur", model_params.get('max_depth', 'N/A'))
         with col4:
-            st.metric("🔢 Random State", random_state)
+            st.metric("⚙️ Temps d'entraînement", f"{training_time:.2f} sec")
         
         st.divider()
         
