@@ -360,11 +360,18 @@ if df is not None:
         # Matrice de corrélation simplifiée
         st.subheader("🔗 Corrélations entre Variables")
         numeric_cols = ['bill_length_mm', 'bill_depth_mm', 'flipper_length_mm', 'body_mass_g']
-        corr_matrix = df[numeric_cols].corr()
+        corr_matrix = df[numeric_cols].corr().round(3)
+        
         st.dataframe(
-            corr_matrix.style.background_gradient(cmap='RdBu_r', vmin=-1, vmax=1),
-            use_container_width=True
+            corr_matrix,
+            use_container_width=True,
+            column_config={col: st.column_config.NumberColumn(
+                col.replace('_', ' ').title(),
+                format="%.3f"
+            ) for col in corr_matrix.columns}
         )
+        
+        st.caption("💡 Les valeurs proches de 1 indiquent une forte corrélation positive, proche de -1 une forte corrélation négative, et proche de 0 aucune corrélation.")
     
     # ========== TAB 4: PERFORMANCE ==========
     with tab4:
@@ -397,7 +404,7 @@ if df is not None:
         )
         
         st.dataframe(
-            cm_df.style.background_gradient(cmap='Blues'),
+            cm_df,
             use_container_width=True
         )
         
@@ -413,7 +420,7 @@ if df is not None:
         report_df = pd.DataFrame(report).transpose()
         report_df = report_df.round(3)
         st.dataframe(
-            report_df.style.background_gradient(cmap='Greens', subset=['precision', 'recall', 'f1-score']),
+            report_df,
             use_container_width=True
         )
         
