@@ -339,7 +339,7 @@ if df is not None:
         st.subheader("🎯 Résultats de la Prédiction")
         
         # Informations sur le modèle utilisé
-        st.info(f"**Modèle utilisé**: {ML_MODELS[model_name]")
+        st.info(f"**Modèle utilisé**: {model_name}")
         
         species_names = ['Adelie', 'Chinstrap', 'Gentoo']
         predicted_species = species_names[prediction[0]]
