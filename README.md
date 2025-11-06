@@ -96,7 +96,7 @@ Choose from 8 state-of-the-art classification algorithms:
 
 🔗 **Live Demo**: https://machine-learningx.streamlit.app
 
-![App Preview](path/to/screenshot.png)
+![App Preview](images/image1.png)
 
 ## 💻 Installation
 
