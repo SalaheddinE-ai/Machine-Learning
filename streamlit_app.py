@@ -855,6 +855,6 @@ st.divider()
 st.markdown("""
 <div style='text-align: center; color: #666; padding: 1rem;'>
     <p>🐧 <strong>Application de Machine Learning</strong> - Prédiction d'Espèces de Manchots</p>
-    <p>Créé avec Streamlit 🌚 | © 2024</p>
+    <p>Créé avec Streamlit 😉 | © 2025</p>
 </div>
 """, unsafe_allow_html=True)
