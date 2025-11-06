@@ -275,14 +275,14 @@ Contributions are welcome! Here's how you can help:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Author
+## Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/SalaheddinE-ai)
-- LinkedIn: [Your LinkedIn](www.linkedin.com/in/salaheddine-es-aissi-elismaili-610b48354)
+- GitHub: [@SalaheddinE-ai](https://github.com/SalaheddinE-ai)
+- LinkedIn: [salaheddine-es-aissi-elismaili](www.linkedin.com/in/salaheddine-es-aissi-elismaili-610b48354)
 - Email: esaissielismailisalaheddine@gmail.com
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - **Palmer Penguins Dataset**: [Allison Horst](https://github.com/allisonhorst/palmerpenguins)
 - **Streamlit**: For the amazing web framework
@@ -300,7 +300,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] Add model deployment guide
 - [ ] Create API endpoint for predictions
 
-## 🐛 Known Issues
+##  Known Issues
 
 - None currently reported
 
