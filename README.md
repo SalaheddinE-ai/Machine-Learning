@@ -108,8 +108,8 @@ Choose from 8 state-of-the-art classification algorithms:
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/penguin-ml-prediction.git
-cd penguin-ml-prediction
+git clone https://github.com/SalaheddinE-ai/Machine-Learning.git
+cd Machine-Learning
 ```
 
 2. **Create a virtual environment** (recommended)
