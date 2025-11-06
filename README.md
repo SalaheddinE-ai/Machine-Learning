@@ -17,7 +17,7 @@ This my first Machine Learning App
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
-An interactive web application that predicts penguin species using 9 different Machine Learning algorithms. Built with Streamlit for educational and research purposes.
+An interactive web application that predicts penguin species using 8 different Machine Learning algorithms. Built with Streamlit for educational and research purposes.
 
 ## 📋 Table of Contents
 - [Overview](#overview)
@@ -39,7 +39,7 @@ An interactive web application that predicts penguin species using 9 different M
 This application demonstrates the power of Machine Learning for species classification using the famous Palmer Penguins dataset. Users can select from 9 different ML algorithms, adjust hyperparameters, and make real-time predictions with confidence scores.
 
 ### Key Highlights
-- ✅ **9 ML Models**: Compare Random Forest, SVM, Neural Networks, and more
+- ✅ **8 ML Models**: Compare Random Forest, SVM, Neural Networks, and more
 - ✅ **Interactive UI**: Intuitive interface with real-time predictions
 - ✅ **Model Comparison**: Automatic benchmarking of all algorithms
 - ✅ **Performance Metrics**: Detailed accuracy, cross-validation, and confusion matrices
@@ -49,7 +49,7 @@ This application demonstrates the power of Machine Learning for species classifi
 ## 🚀 Features
 
 ### 1. **Model Selection**
-Choose from 9 state-of-the-art classification algorithms:
+Choose from 8 state-of-the-art classification algorithms:
 - 🌳 Random Forest
 - 🚀 Gradient Boosting
 - 🎯 Support Vector Machine (SVM)
@@ -57,7 +57,6 @@ Choose from 9 state-of-the-art classification algorithms:
 - 🌲 Decision Tree
 - 📊 Logistic Regression
 - 🎲 Naive Bayes
-- 🧠 Neural Network (MLP)
 - ⚡ AdaBoost
 
 ### 2. **Hyperparameter Tuning**
@@ -95,7 +94,7 @@ Choose from 9 state-of-the-art classification algorithms:
 
 ## 🎬 Demo
 
-🔗 **Live Demo**: [Add your Streamlit Cloud link here]
+🔗 **Live Demo**: https://machine-learningx.streamlit.app
 
 ![App Preview](path/to/screenshot.png)
 
@@ -183,7 +182,6 @@ Predicted Species: Gentoo (95% confidence)
 | 🌲 Decision Tree | Interpretability | Fast | Very High |
 | 📊 Logistic Regression | Linear relationships | Very Fast | Very High |
 | 🎲 Naive Bayes | Large datasets | Very Fast | Medium |
-| 🧠 Neural Network | Complex patterns | Slow | Low |
 | ⚡ AdaBoost | Ensemble learning | Medium | Medium |
 
 ## 📊 Dataset
@@ -279,9 +277,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+- GitHub: [@yourusername](https://github.com/SalaheddinE-ai)
+- LinkedIn: [Your LinkedIn](www.linkedin.com/in/salaheddine-es-aissi-elismaili-610b48354)
+- Email: esaissielismailisalaheddine@gmail.com
 
 ## 🙏 Acknowledgments
 
@@ -308,7 +306,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 💬 Support
 
 If you have any questions or issues, please:
-1. Check existing [Issues](https://github.com/yourusername/penguin-ml-prediction/issues)
+1. Check existing [Issues](https://github.com/SalaheddinE-ai/Machine-Learning/issues)
 2. Open a new issue with detailed information
 3. Contact via email
 
@@ -320,4 +318,4 @@ If you find this project useful, please consider giving it a star! ⭐
 
 **Made with ❤️ and Python**
 
-*Last Updated: November 2024*
+*Last Updated: November 2025*
