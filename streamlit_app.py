@@ -57,7 +57,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Titre principal
-st.markdown('<p class="main-header">🐧 Application de Machine Learning</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">🤖 Application de Machine Learning</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Prédiction d\'espèces de manchots avec Random Forest</p>', unsafe_allow_html=True)
 
 # Fonction pour charger les données
@@ -80,8 +80,7 @@ ML_MODELS = {
             'max_depth': {'type': 'slider', 'min': 1, 'max': 30, 'default': 10, 'step': 1, 'label': 'Profondeur maximale'},
             'min_samples_split': {'type': 'slider', 'min': 2, 'max': 20, 'default': 2, 'step': 1, 'label': 'Min échantillons pour split'}
         },
-        'description': '🌳 Ensemble d\'arbres de décision. Robuste et performant pour la classification.',
-        'icon': '🌳'
+        'description': ' Ensemble d\'arbres de décision. Robuste et performant pour la classification.',
     },
     'Gradient Boosting': {
         'model': GradientBoostingClassifier,
@@ -90,8 +89,8 @@ ML_MODELS = {
             'learning_rate': {'type': 'slider', 'min': 0.01, 'max': 1.0, 'default': 0.1, 'step': 0.01, 'label': 'Taux d\'apprentissage'},
             'max_depth': {'type': 'slider', 'min': 1, 'max': 10, 'default': 3, 'step': 1, 'label': 'Profondeur maximale'}
         },
-        'description': '🚀 Boosting séquentiel. Très performant mais plus lent à entraîner.',
-        'icon': '🚀'
+        'description': ' Boosting séquentiel. Très performant mais plus lent à entraîner.',
+        
     },
     'Support Vector Machine': {
         'model': SVC,
@@ -100,8 +99,8 @@ ML_MODELS = {
             'kernel': {'type': 'selectbox', 'options': ['rbf', 'linear', 'poly', 'sigmoid'], 'default': 'rbf', 'label': 'Kernel'},
             'gamma': {'type': 'selectbox', 'options': ['scale', 'auto'], 'default': 'scale', 'label': 'Gamma'}
         },
-        'description': '🎯 Machine à vecteurs de support. Excellent pour les données non-linéaires.',
-        'icon': '🎯'
+        'description': ' Machine à vecteurs de support. Excellent pour les données non-linéaires.',
+        
     },
     'K-Nearest Neighbors': {
         'model': KNeighborsClassifier,
@@ -110,8 +109,8 @@ ML_MODELS = {
             'weights': {'type': 'selectbox', 'options': ['uniform', 'distance'], 'default': 'uniform', 'label': 'Poids'},
             'metric': {'type': 'selectbox', 'options': ['euclidean', 'manhattan', 'minkowski'], 'default': 'euclidean', 'label': 'Métrique'}
         },
-        'description': '👥 Classification basée sur la proximité. Simple et intuitif.',
-        'icon': '👥'
+        'description': ' Classification basée sur la proximité. Simple et intuitif.',
+        
     },
     'Decision Tree': {
         'model': DecisionTreeClassifier,
@@ -120,8 +119,8 @@ ML_MODELS = {
             'min_samples_split': {'type': 'slider', 'min': 2, 'max': 20, 'default': 2, 'step': 1, 'label': 'Min échantillons pour split'},
             'criterion': {'type': 'selectbox', 'options': ['gini', 'entropy'], 'default': 'gini', 'label': 'Critère de division'}
         },
-        'description': '🌲 Arbre de décision unique. Facile à interpréter et visualiser.',
-        'icon': '🌲'
+        'description': ' Arbre de décision unique. Facile à interpréter et visualiser.',
+        
     },
     'Logistic Regression': {
         'model': LogisticRegression,
@@ -130,35 +129,26 @@ ML_MODELS = {
             'max_iter': {'type': 'slider', 'min': 100, 'max': 1000, 'default': 200, 'step': 100, 'label': 'Itérations maximales'},
             'solver': {'type': 'selectbox', 'options': ['lbfgs', 'liblinear', 'saga'], 'default': 'lbfgs', 'label': 'Solveur'}
         },
-        'description': '📊 Régression logistique. Simple, rapide et efficace pour la classification linéaire.',
-        'icon': '📊'
+        'description': ' Régression logistique. Simple, rapide et efficace pour la classification linéaire.',
+        
     },
     'Naive Bayes': {
         'model': GaussianNB,
         'params': {
             'var_smoothing': {'type': 'slider', 'min': 1e-12, 'max': 1e-5, 'default': 1e-9, 'step': 1e-11, 'label': 'Lissage de variance', 'format': '%.2e'}
         },
-        'description': '🎲 Classificateur bayésien. Très rapide, idéal pour les grands datasets.',
-        'icon': '🎲'
+        'description': ' Classificateur bayésien. Très rapide, idéal pour les grands datasets.',
+        
     },
-    'Neural Network': {
-        'model': MLPClassifier,
-        'params': {
-            'hidden_layer_sizes': {'type': 'selectbox', 'options': [(50,), (100,), (100, 50), (100, 100)], 'default': (100,), 'label': 'Architecture (couches cachées)'},
-            'activation': {'type': 'selectbox', 'options': ['relu', 'tanh', 'logistic'], 'default': 'relu', 'label': 'Fonction d\'activation'},
-            'learning_rate_init': {'type': 'slider', 'min': 0.0001, 'max': 0.1, 'default': 0.001, 'step': 0.0001, 'label': 'Taux d\'apprentissage', 'format': '%.4f'}
-        },
-        'description': '🧠 Réseau de neurones. Puissant pour les relations complexes.',
-        'icon': '🧠'
-    },
+   
     'AdaBoost': {
         'model': AdaBoostClassifier,
         'params': {
             'n_estimators': {'type': 'slider', 'min': 10, 'max': 300, 'default': 50, 'step': 10, 'label': 'Nombre d\'estimateurs'},
             'learning_rate': {'type': 'slider', 'min': 0.01, 'max': 2.0, 'default': 1.0, 'step': 0.1, 'label': 'Taux d\'apprentissage'}
         },
-        'description': '⚡ Adaptive Boosting. Combine des modèles faibles pour créer un modèle fort.',
-        'icon': '⚡'
+        'description': ' Adaptive Boosting. Combine des modèles faibles pour créer un modèle fort.',
+        
     }
 }
 
@@ -241,7 +231,7 @@ if df is not None:
         )
         
         # Afficher la description du modèle
-        st.info(f"{ML_MODELS[model_name]['icon']} {ML_MODELS[model_name]['description']}")
+        st.info(f"{ML_MODELS[model_name]['description']}")
         
         st.divider()
         st.header("⚙️ Hyperparamètres")
@@ -273,11 +263,11 @@ if df is not None:
         st.header("📊 Caractéristiques du Manchot")
         
         # Input features
-        island = st.selectbox('🏝️ Île', ('Biscoe', 'Dream', 'Torgersen'))
-        bill_length_mm = st.slider('📏 Longueur du bec (mm)', 32.1, 59.6, 43.9)
-        bill_depth_mm = st.slider('📐 Profondeur du bec (mm)', 13.1, 21.5, 17.2)
-        flipper_length_mm = st.slider('🦅 Longueur de la nageoire (mm)', 172.0, 231.0, 201.0)
-        body_mass_g = st.slider('⚖️ Masse corporelle (g)', 2700.0, 6300.0, 4207.0)
+        island = st.selectbox('Île', ('Biscoe', 'Dream', 'Torgersen'))
+        bill_length_mm = st.slider('Longueur du bec (mm)', 32.1, 59.6, 43.9)
+        bill_depth_mm = st.slider('Profondeur du bec (mm)', 13.1, 21.5, 17.2)
+        flipper_length_mm = st.slider('Longueur de la nageoire (mm)', 172.0, 231.0, 201.0)
+        body_mass_g = st.slider(' Masse corporelle (g)', 2700.0, 6300.0, 4207.0)
         gender = st.selectbox('⚥ Sexe', ('male', 'female'))
         
         # Info
@@ -296,7 +286,7 @@ if df is not None:
     
     # ========== TAB 1: PRÉDICTION ==========
     with tab1:
-        st.header("🔮 Prédiction de l'Espèce")
+        st.header(" 🧊 Prédiction de l'Espèce")
         
         # Créer le DataFrame d'entrée
         input_data = {
@@ -314,14 +304,14 @@ if df is not None:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("🏝️ Île", island)
-            st.metric("📏 Longueur du bec", f"{bill_length_mm} mm")
+            st.metric(" Île", island)
+            st.metric(" Longueur du bec", f"{bill_length_mm} mm")
         with col2:
             st.metric("⚥ Sexe", gender.capitalize())
-            st.metric("📐 Profondeur du bec", f"{bill_depth_mm} mm")
+            st.metric(" Profondeur du bec", f"{bill_depth_mm} mm")
         with col3:
-            st.metric("🦅 Longueur nageoire", f"{flipper_length_mm} mm")
-            st.metric("⚖️ Masse corporelle", f"{body_mass_g} g")
+            st.metric(" Longueur nageoire", f"{flipper_length_mm} mm")
+            st.metric(" Masse corporelle", f"{body_mass_g} g")
         
         # Entraîner le modèle
         with st.spinner(f'🤖 Entraînement du modèle {model_name} en cours...'):
@@ -349,7 +339,7 @@ if df is not None:
         st.subheader("🎯 Résultats de la Prédiction")
         
         # Informations sur le modèle utilisé
-        st.info(f"**Modèle utilisé**: {ML_MODELS[model_name]['icon']} {model_name}")
+        st.info(f"**Modèle utilisé**: {ML_MODELS[model_name]")
         
         species_names = ['Adelie', 'Chinstrap', 'Gentoo']
         predicted_species = species_names[prediction[0]]
@@ -623,9 +613,9 @@ if df is not None:
     with tab5:
         st.header("📊 Comparaison des Modèles")
         
-        st.info("🔄 Cette section compare les performances de tous les modèles disponibles")
+        st.info(" Cette section compare les performances de tous les modèles disponibles")
         
-        if st.button("🚀 Lancer la comparaison des modèles", type="primary"):
+        if st.button(" Lancer la comparaison des modèles", type="primary"):
             comparison_results = []
             
             progress_bar = st.progress(0)
@@ -660,7 +650,6 @@ if df is not None:
                     
                     comparison_results.append({
                         'Modèle': m_name,
-                        'Icon': m_config['icon'],
                         'Précision Test': f"{acc*100:.2f}%",
                         'Précision CV': f"{cv_scores_temp.mean()*100:.2f}%",
                         'CV Std': f"±{cv_scores_temp.std()*100:.2f}%",
@@ -709,7 +698,6 @@ if df is not None:
             models_info = []
             for m_name, m_config in ML_MODELS.items():
                 models_info.append({
-                    'Icon': m_config['icon'],
                     'Modèle': m_name,
                     'Description': m_config['description']
                 })
@@ -737,18 +725,17 @@ if df is not None:
         
         Cette application propose **9 algorithmes de Machine Learning** différents:
         
-        1. **🌳 Random Forest**: Ensemble d'arbres de décision
-        2. **🚀 Gradient Boosting**: Boosting séquentiel puissant
-        3. **🎯 SVM**: Machine à vecteurs de support
-        4. **👥 K-Nearest Neighbors**: Classification par proximité
-        5. **🌲 Decision Tree**: Arbre de décision simple
-        6. **📊 Logistic Regression**: Classification linéaire
-        7. **🎲 Naive Bayes**: Classificateur bayésien
-        8. **🧠 Neural Network**: Réseau de neurones multicouche
-        9. **⚡ AdaBoost**: Adaptive Boosting
+        1. ** Random Forest**: Ensemble d'arbres de décision
+        2. ** Gradient Boosting**: Boosting séquentiel puissant
+        3. ** SVM**: Machine à vecteurs de support
+        4. ** K-Nearest Neighbors**: Classification par proximité
+        5. ** Decision Tree**: Arbre de décision simple
+        6. ** Logistic Regression**: Classification linéaire
+        7. ** Naive Bayes**: Classificateur bayésien
+        8. ** AdaBoost**: Adaptive Boosting
         
         #### 🎯 Caractéristiques de l'Application
-        - ✅ **9 modèles de ML** au choix
+        - ✅ **8 modèles de ML** au choix
         - ✅ **Hyperparamètres personnalisables** pour chaque modèle
         - ✅ **Prédiction en temps réel**
         - ✅ **Comparaison automatique** des modèles
@@ -780,7 +767,6 @@ if df is not None:
         - **Random Forest** et **Gradient Boosting** offrent généralement les meilleures performances
         - **SVM** est excellent pour les données non-linéaires
         - **Logistic Regression** est rapide et simple pour débuter
-        - **Neural Network** peut capturer des relations complexes mais nécessite plus de données
         - Utilisez l'**onglet Comparaison** pour trouver le meilleur modèle
         
         #### 📚 Ressources
@@ -869,6 +855,6 @@ st.divider()
 st.markdown("""
 <div style='text-align: center; color: #666; padding: 1rem;'>
     <p>🐧 <strong>Application de Machine Learning</strong> - Prédiction d'Espèces de Manchots</p>
-    <p>Créé avec Streamlit 🎈 | © 2024</p>
+    <p>Créé avec Streamlit 🌚 | © 2024</p>
 </div>
 """, unsafe_allow_html=True)
