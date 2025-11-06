@@ -674,8 +674,8 @@ if df is not None:
                 # Ajouter des médailles
                 if len(comparison_df) >= 3:
                     comparison_df['Rang'] = ['🥇', '🥈', '🥉'] + [''] * (len(comparison_df) - 3)
-                    comparison_df = comparison_df[['Rang', 'Icon', 'Modèle', 'Précision Test', 'Précision CV', 'CV Std', 'Temps (s)']]
-                
+                    comparison_df = comparison_df[['Rang', 'Modèle', 'Précision Test', 'Précision CV', 'CV Std', 'Temps (s)']]
+
                 st.dataframe(comparison_df, hide_index=True, use_container_width=True)
                 
                 # Conseils
