@@ -1,4 +1,4 @@
-# 🤖 Machine Learning app App
+# 🤖 Machine Learning app App streamlit
 
 This my first Machine Learning App
 
